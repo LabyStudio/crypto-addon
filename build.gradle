@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+}
+
+group 'com.github.LabyStudio'
+version '1.0.0'
+
+compileJava {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.github.LabyStudio:desktopmodules:2.5.3:all'
+    implementation 'com.github.LabyStudio:desktopmodules:2.5.3:sources'
+    //implementation project(':desktopmodules-core')
+}
+
+allprojects {
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
+}
