@@ -73,7 +73,7 @@ public class CryptoModule extends Module<CryptoAddon> {
         } else {
             currencyObject = new JsonObject();
             currencyObject.addProperty("base", CurrencyType.BTC.name());
-            currencyObject.addProperty("quota", CurrencyType.EUR.name());
+            currencyObject.addProperty("quota", CurrencyType.USD.name());
             config.add("currency", currencyObject);
         }
 
@@ -87,7 +87,7 @@ public class CryptoModule extends Module<CryptoAddon> {
             e.printStackTrace();
 
             this.baseCurrency = CurrencyType.BTC;
-            this.quoteCurrency = CurrencyType.EUR;
+            this.quoteCurrency = CurrencyType.USD;
         }
     }
 

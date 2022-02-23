@@ -11,5 +11,24 @@ You can download the addon jar file [here](https://github.com/LabyStudio/crypto-
 Put the built jar file into the following directory: ``C:/Users/<name>/AppData/Roaming/DesktopModules/addons/``<br>
 And then you are ready to launch the core application.
 
+## Configuration
+
+You can change the currency in the config:
+```json
+{
+  "modules": {
+    "cryptomodule": {
+      "enabled": false,
+      "x": 1526,
+      "y": 5,
+      "currency": {
+        "base": "BTC",
+        "quota": "EUR"
+      }
+    }
+  }
+}
+```
+
 ## Run in IDE
 Launch the main class ``StartCrypto``
