@@ -11,6 +11,6 @@ public enum SeriesScaleType {
     }
 
     public long value() {
-        return value;
+        return this.value;
     }
 }

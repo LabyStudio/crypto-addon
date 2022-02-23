@@ -20,9 +20,9 @@ public class BlockChainApi {
     private final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
     private final Gson GSON = new Gson();
 
-    public void requestSeriesAsync(CurrencyType base, CurrencyType quote, Consumer<ValueAtTime[]> callback) {
+    public void requestSeriesAsync(CurrencyType base, CurrencyType quote, int rangeHours, Consumer<ValueAtTime[]> callback) {
         long end = System.currentTimeMillis() / 1000L;
-        long start = end - 60 * 60 * 24;
+        long start = end - 60L * 60 * rangeHours;
         this.requestAsync(
                 String.format(URL_CURRENCY_SERIES, base.name(), quote.name(), SeriesScaleType.FIFTEEN_MINUTES.value(), start, end),
                 ValueAtTime[].class,
@@ -34,10 +34,11 @@ public class BlockChainApi {
         );
     }
 
+    @SuppressWarnings("SameParameterValue")
     private <T> void requestAsync(String url, Class<?> type, Consumer<T> callback) {
-        EXECUTOR.execute(() -> {
+        this.EXECUTOR.execute(() -> {
             try {
-                callback.accept(request(url, type));
+                callback.accept(this.request(url, type));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -55,15 +56,8 @@ public class BlockChainApi {
         }
 
         try (JsonReader reader = new JsonReader(new InputStreamReader(connection.getInputStream()))) {
-            return GSON.fromJson(reader, type);
+            return this.GSON.fromJson(reader, type);
         }
     }
-
-    /*
-    private void toBitcoin(double value, CurrencyType currencyType, Consumer<Double> callback) {
-        requestAsync(String.format(URL_TO_BTC, currencyType.name(), value), response -> {
-
-        });
-    }*/
 
 }

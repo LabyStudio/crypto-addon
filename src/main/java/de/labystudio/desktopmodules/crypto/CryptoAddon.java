@@ -7,7 +7,7 @@ public class CryptoAddon extends Addon {
 
     @Override
     public void onInitialize() throws Exception {
-        registerModule(CryptoModule.class);
+        this.registerModule(CryptoModule.class);
     }
 
     @Override
