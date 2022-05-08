@@ -12,7 +12,6 @@ import de.labystudio.desktopmodules.core.renderer.swing.SwingRenderContext;
 import de.labystudio.desktopmodules.crypto.CryptoAddon;
 import de.labystudio.desktopmodules.crypto.api.BlockChainApi;
 import de.labystudio.desktopmodules.crypto.api.CurrencyType;
-import de.labystudio.desktopmodules.crypto.api.SeriesScaleType;
 import de.labystudio.desktopmodules.crypto.api.model.ValueAtTime;
 
 import java.awt.Color;
@@ -37,6 +36,8 @@ public class CryptoModule extends Module<CryptoAddon> {
     // Settings
     private CurrencyType baseCurrency;
     private CurrencyType quoteCurrency;
+    private boolean showGraph;
+    private int updateInterval;
 
     // Temp
     private long timeNextRequest = -1L;
@@ -77,6 +78,20 @@ public class CryptoModule extends Module<CryptoAddon> {
             config.add("currency", currencyObject);
         }
 
+        // Graph visibility
+        if (config.has("show_graph")) {
+            this.showGraph = config.get("show_graph").getAsBoolean();
+        } else {
+            config.addProperty("show_graph", this.showGraph = true);
+        }
+
+        // Update interval
+        if (config.has("update_interval")) {
+            this.updateInterval = config.get("update_interval").getAsInt();
+        } else {
+            config.addProperty("update_interval", this.updateInterval = 60 * 15); // Default: 15 minutes
+        }
+
         // Load currency type
         try {
             this.baseCurrency = CurrencyType.valueOf(currencyObject.get("base").getAsString());
@@ -94,7 +109,7 @@ public class CryptoModule extends Module<CryptoAddon> {
     @Override
     public void onTick() {
         if (this.baseCurrency != null && this.timeNextRequest < System.currentTimeMillis()) {
-            this.timeNextRequest = System.currentTimeMillis() + SeriesScaleType.FIFTEEN_MINUTES.value() * 1000;
+            this.timeNextRequest = System.currentTimeMillis() + this.updateInterval * 1000L;
 
             this.api.requestSeriesAsync(this.baseCurrency, this.quoteCurrency, 24, series -> {
                 this.series = series;
@@ -158,49 +173,56 @@ public class CryptoModule extends Module<CryptoAddon> {
             double totalTextWidth = Math.max(line1Width, line2Width) + space;
             double splineWidth = width - totalTextWidth;
 
-            // Draw current price
-            context.drawString(line1, splineWidth + space, 10, StringAlignment.LEFT, StringEffect.SHADOW, Color.WHITE, FONT);
-            context.drawString(line2, splineWidth + space, (10 + 2) * 2, StringAlignment.LEFT, StringEffect.SHADOW, color, FONT);
+            if (this.showGraph) {
+                // Draw current price
+                context.drawString(line1, splineWidth + space, 10, StringAlignment.LEFT, StringEffect.SHADOW, Color.WHITE, FONT);
+                context.drawString(line2, splineWidth + space, (10 + 2) * 2, StringAlignment.LEFT, StringEffect.SHADOW, color, FONT);
 
-            // Draw arrow
-            context.drawImage(positive ? this.textureArrowUp : this.textureArrowDown, splineWidth + space * 2 + line2Width, 14, 10, 10);
-
-            // Calculate min and max price
-            double max = Double.MIN_VALUE;
-            double min = Double.MAX_VALUE;
-            for (ValueAtTime entry : this.series) {
-                max = Math.max(entry.getPrice(), max);
-                min = Math.min(entry.getPrice(), min);
+                // Draw arrow
+                context.drawImage(positive ? this.textureArrowUp : this.textureArrowDown, splineWidth + space * 2 + line2Width, 14, 10, 10);
+            } else {
+                // Draw current price
+                context.drawString(line1, splineWidth + space, 20, StringAlignment.LEFT, StringEffect.SHADOW, color, FONT);
             }
 
-            // Create spline
-            Path2D.Double splineYesterday = new Path2D.Double();
-            Path2D.Double splineToday = new Path2D.Double();
-            for (int i = 0; i < this.series.length; i++) {
-                ValueAtTime entry = this.series[i];
-
-                double x = splineWidth / (double) this.series.length * i;
-                double y = height - height / (max - min) * (entry.getPrice() - min);
-
-                if (entry.getTimestamp() > this.timeMidnightSeconds) {
-                    splineToday.lineTo(x, y);
-                } else {
-                    if (i == 0) {
-                        splineYesterday.moveTo(x, y);
-                    } else {
-                        splineYesterday.lineTo(x, y);
-                    }
-                    splineToday.moveTo(x, y);
+            if (this.showGraph) {
+                // Calculate min and max price
+                double max = Double.MIN_VALUE;
+                double min = Double.MAX_VALUE;
+                for (ValueAtTime entry : this.series) {
+                    max = Math.max(entry.getPrice(), max);
+                    min = Math.min(entry.getPrice(), min);
                 }
+
+                // Create spline
+                Path2D.Double splineYesterday = new Path2D.Double();
+                Path2D.Double splineToday = new Path2D.Double();
+                for (int i = 0; i < this.series.length; i++) {
+                    ValueAtTime entry = this.series[i];
+
+                    double x = splineWidth / (double) this.series.length * i;
+                    double y = height - height / (max - min) * (entry.getPrice() - min);
+
+                    if (entry.getTimestamp() > this.timeMidnightSeconds) {
+                        splineToday.lineTo(x, y);
+                    } else {
+                        if (i == 0) {
+                            splineYesterday.moveTo(x, y);
+                        } else {
+                            splineYesterday.lineTo(x, y);
+                        }
+                        splineToday.moveTo(x, y);
+                    }
+                }
+
+                // Draw series of yesterday
+                this.graphics.setColor(Color.WHITE);
+                this.graphics.draw(splineYesterday);
+
+                // Draw series of today
+                this.graphics.setColor(color);
+                this.graphics.draw(splineToday);
             }
-
-            // Draw series of yesterday
-            this.graphics.setColor(Color.WHITE);
-            this.graphics.draw(splineYesterday);
-
-            // Draw series of today
-            this.graphics.setColor(color);
-            this.graphics.draw(splineToday);
         }
     }
 
